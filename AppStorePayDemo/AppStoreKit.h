@@ -24,18 +24,12 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
 @interface AppStoreKit : NSObject<SKProductsRequestDelegate,SKPaymentTransactionObserver>
 
 +(instancetype) getInstance;
-
-/**
- 初始化苹果支付，需要在didFinishLaunchingWithOptions函数中调用,传入共享数据套件名字，用来保存相关信息
- 必须在Capabilities中的app groups中添加该名字的group，否者可能导致支付失败或者未知情况
- */
-
 /**
  初始化苹果支付，需要在didFinishLaunchingWithOptions函数中调用,传入共享数据套件名字，用来保存相关信息
  必须在Capabilities中的app groups中添加该名字的group，否者可能导致支付失败或者未知情况
 
  @param suiteName Capabilities中的app groups的名字
- @param clear 是否清除缓存数据，包括所有商品列表和所有支付状态缓存,使用一次true后应该立即改为false，正式上线的时候必须为：false
+ @param clear 是否清除缓存数据，包括所有商品列表和所有支付状态缓存,使用一次true运行后应该立即改为false，正式上线的时候必须为：false
  为了保证开发者使用错误，release版本的包变量clear强制为false
  */
 -(void) initAppStoreWithSuiteName:(NSString*)suiteName clear:(bool)clear;
@@ -44,7 +38,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
  支付函数
 
  @param productid 商品id
- @param extdata 透传对象，可以为字典、数组或者字符串
+ @param extdata 透传对象，可以为字典、数组或者json字符串
  @param payback 支付回调函数，返回一个字典，有如下key：
          1.key = extdata(value -> NSObject*)：回调函数透传对象
          2.key = price(value -> NSDecimalNumber*)：商品价格，已经转化为支付国家的货币

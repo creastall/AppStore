@@ -344,8 +344,6 @@
     NSLog(@"updatedTransactions counts = %d",transactions.count);
     for(SKPaymentTransaction * transaction in transactions)
     {
-//        [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
-//        return;
         switch (transaction.transactionState)
         {
             case SKPaymentTransactionStatePurchasing:
@@ -377,9 +375,6 @@
             }
                 break;
             default:
-            {
-
-            }
                 break;
         }
     }
