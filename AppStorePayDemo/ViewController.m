@@ -3,7 +3,7 @@
 //  paytest
 //
 //  Created by creastall on 2018/6/8.
-//  Copyright © 2018年 downjoy. All rights reserved.
+//  Copyright © 2018年 creastall. All rights reserved.
 //
 
 #import "ViewController.h"
