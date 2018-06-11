@@ -18,7 +18,7 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
-    [[AppStoreKit getInstance] initAppStoreWithSuiteName:@"group.westbundgame" clear:false];
+    [[AppStoreKit getInstance] initAppStoreWithSuiteName:@"group.yoursuitename" clear:false];
     return YES;
 }
 
