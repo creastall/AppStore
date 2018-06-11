@@ -60,7 +60,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
 -(void) consume:(NSString*)productid withCallBack:(AppStorePayEventCallBack)consumeback;
 
 /**
- 检测：支付成功，但是服务器没有发货的账单
+ 检测：支付成功，但是还没有调用consume来消费的订单
 
  @param noConsumeBack 支付回调函数，返回一个字典，有如下key：
         1.key = noConsume(value -> NSArray*)：记录所有没有消费的账单，数组中每个值为一个字典，该字典和pay函数返回的字典一样，如下
