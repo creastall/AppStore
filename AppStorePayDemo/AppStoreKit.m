@@ -1,6 +1,6 @@
 //
 //  AppStoreKit.m
-//  appstoredemo
+//  AppStorePayDemo
 //
 //  Created by creastall on 2018/6/11.
 //  Copyright © 2018年 creastall. All rights reserved.
@@ -95,7 +95,15 @@
                     payback(mutOldsaveExtDict);
                 }
                 else{
-                    payback(@{@"status":@(AppStorePayStatusSameProductIdPaying)});
+                    NSNumber* status = [oldsaveExtDict objectForKey:@"status"];
+                    if (status && status.intValue == AppStorePayStatusRestartAppToRestorePaied) {
+                        payback(oldsaveExtDict);
+                    }
+                    else{
+                        NSMutableDictionary* tmp = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
+                        [tmp setObject:@(AppStorePayStatusSameProductIdPaying) forKey:@"status"];
+                        payback(tmp);
+                    }
                 }
             }
             else
@@ -251,10 +259,6 @@
 -(void) dealSuccessTransaction:(SKPaymentTransaction*)transaction {
     @try{
         SKPayment* payment = transaction.payment;
-        if (payment == nil) {
-            NSLog(@"dealSuccessTransaction payment == nil");
-            return;
-        }
         NSDictionary* saveExtDict = [self.userDefaults objectForKey:payment.productIdentifier];
         if (nil == saveExtDict) {
             NSLog(@"dealSuccessTransaction saveExtDict == nil");
@@ -272,6 +276,10 @@
         if (nil == receiptData) {
             //如果卸载游戏前有支付成功但是没有消费的账单，当游戏再次安装后第一次启动的时候会出现这种情况
             NSLog(@"dealSuccessTransaction nil == receiptData");
+            if (nil == [extSaveDict objectForKey:@"receipt"]) {
+                [extSaveDict setObject:@(AppStorePayStatusRestartAppToRestorePaied) forKey:@"status"];
+                [self.userDefaults setObject:extSaveDict forKey:payment.productIdentifier];
+            }
             return;
         }
         NSString *receiptString=[receiptData base64EncodedStringWithOptions:0];//转化为base64字符串
@@ -329,6 +337,11 @@
     NSLog(@"updatedTransactions counts = %d",transactions.count);
     for(SKPaymentTransaction * transaction in transactions)
     {
+        //清除所有没有消费的交易信息，避免干扰测试
+//        if (transaction.transactionState != SKPaymentTransactionStatePurchasing) {
+//            [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
+//            return;
+//        }
         switch (transaction.transactionState)
         {
             case SKPaymentTransactionStatePurchasing:

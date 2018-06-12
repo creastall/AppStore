@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  paytest
+//  AppStorePayDemo
 //
 //  Created by creastall on 2018/6/8.
 //  Copyright © 2018年 creastall. All rights reserved.
@@ -81,6 +81,11 @@
             case AppStorePayStatusInvalidProductId:
             {
                 NSLog(@"ViewController 无效的商品id。。。。");
+                NSLog(@"%@",payback);
+            }
+            case AppStorePayStatusRestartAppToRestorePaied:
+            {
+                NSLog(@"ViewController 需要重启app后，点击同样商品或者调用checkNoConsumeWithCallBack函数来恢复已经购买的商品。。。。");
                 NSLog(@"%@",payback);
             }
                 break;

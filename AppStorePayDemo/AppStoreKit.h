@@ -1,6 +1,6 @@
 //
 //  AppStoreKit.h
-//  appstoredemo
+//  AppStorePayDemo
 //
 //  Created by creastall on 2018/6/11.
 //  Copyright © 2018年 creastall. All rights reserved.
@@ -18,7 +18,14 @@ typedef enum : NSInteger {
     AppStorePayStatusInvalidProductId,//无效的商品id
     AppStorePayStatusConsumeSuccess,//消费成功
     AppStorePayStatusConsumeFail,//消费失败
-    AppStorePayStatusExistNoConsumes//存在没有消费的订单
+    AppStorePayStatusExistNoConsumes,//存在没有消费的订单
+    /* 
+        用户点击商品进行支付，还没有等到弹出苹果的输入密码的框的时候，把app强制退掉
+        然后弹出输入密码框的时候，输入正确密码后付款，然后卸载app，再重新安装app，然后启动app
+        第一次启动的时候，用户选择同款商品进行支付会返回这个状态，提示用户该商品已经购买，需要重启app来恢复购买
+        重启app后，点击同样商品或者调用checkNoConsumeWithCallBack函数来恢复已经购买的商品
+     */
+    AppStorePayStatusRestartAppToRestorePaied
 } AppStorePayStatus;
 
 typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
