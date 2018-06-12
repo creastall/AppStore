@@ -9,14 +9,12 @@
 
 @interface AppStoreKit ()
 
-@property (strong,nonatomic) NSMutableDictionary* allProducts;//key=productid,value=SKProduct
+@property (strong,nonatomic) NSMutableDictionary* dictWithSKProductForProductId;//key=productid,value=SKProduct
 //请求商品列表然后重新支付
 @property (strong,nonatomic) NSMutableDictionary* payfunForProductid;
-@property (strong,nonatomic) NSMutableDictionary* consumefunForProductid;
 //保存支付回调函数key=productid，value=PayCallBack
 @property (strong,nonatomic) NSMutableDictionary* paycallbackForProductid;
-@property (strong,nonatomic) NSMutableDictionary* productidtransaction;//保存没有消费的订单和交易的集合
-@property (strong,nonatomic) NSMutableDictionary* productidExtSaveDict;
+@property (strong,nonatomic) NSMutableDictionary* dictWithTransactionForProductId;//保存没有消费的订单和交易的集合
 @property (strong,nonatomic) NSUserDefaults* userDefaults;
 
 @end
@@ -34,12 +32,10 @@
 
 -(id)init{
     if (self = [super init]) {
-        self.allProducts = [NSMutableDictionary dictionary];
+        self.dictWithSKProductForProductId = [NSMutableDictionary dictionary];
         self.payfunForProductid = [NSMutableDictionary dictionary];
-        self.consumefunForProductid = [NSMutableDictionary dictionary];
         self.paycallbackForProductid = [NSMutableDictionary dictionary];
-        self.productidtransaction = [NSMutableDictionary dictionary];
-        self.productidExtSaveDict = [NSMutableDictionary dictionary];
+        self.dictWithTransactionForProductId = [NSMutableDictionary dictionary];
     }
     return self;
 }
@@ -93,11 +89,10 @@
         void(^executePay)(SKProduct*) = ^(SKProduct* product){
             NSDictionary* oldsaveExtDict = [self.userDefaults objectForKey:productid];
             if (oldsaveExtDict) {
-                NSDictionary* dict = [self.productidExtSaveDict objectForKey:productid];
-                NSMutableDictionary* paiedOrder = [NSMutableDictionary dictionaryWithDictionary:dict];
-                if (paiedOrder) {
-                    [paiedOrder setObject:@(AppStorePayStatusSameProductIdPaied) forKey:@"status"];
-                    payback(paiedOrder);
+                if ([oldsaveExtDict objectForKey:@"receipt"]) {
+                    NSMutableDictionary* mutOldsaveExtDict = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
+                    [mutOldsaveExtDict setObject:@(AppStorePayStatusSameProductIdPaied) forKey:@"status"];
+                    payback(mutOldsaveExtDict);
                 }
                 else{
                     payback(@{@"status":@(AppStorePayStatusSameProductIdPaying)});
@@ -124,7 +119,7 @@
             }
         };
         
-        SKProduct* product = [self.allProducts objectForKey:productid];
+        SKProduct* product = [self.dictWithSKProductForProductId objectForKey:productid];
         if (product){
             executePay(product);
         }
@@ -154,40 +149,24 @@
             NSLog(@"productid 不能为空或空字符");
             return;
         }
-        SKPaymentTransaction* transaction = [self.productidtransaction objectForKey:productid];
-        if (transaction) {
-            void(^consumeFun)(SKProduct*) = ^(SKProduct* product){
-                [self.productidtransaction removeObjectForKey:productid];
-                NSMutableDictionary* extdatadict = [self.productidExtSaveDict objectForKey:productid];
-                [self.productidExtSaveDict removeObjectForKey:productid];
-                [self.userDefaults removeObjectForKey:productid];
-                if (consumeback) {
-                    [extdatadict setObject:@(AppStorePayStatusConsume) forKey:@"status"];
-                    [extdatadict removeObjectForKey:@"receipt"];
-                    consumeback(extdatadict);
-                }
-                [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
-            };
-            SKProduct* product = [self.allProducts objectForKey:productid];
-            if (product) {
-                consumeFun(product);
+        SKPaymentTransaction* transaction = [self.dictWithTransactionForProductId objectForKey:productid];
+        NSDictionary* extdict = [self.userDefaults objectForKey:productid];
+        if (transaction && extdict && [extdict objectForKey:@"receipt"]) {
+            [self.dictWithTransactionForProductId removeObjectForKey:productid];
+            [self.userDefaults removeObjectForKey:productid];
+            if (consumeback) {
+                NSMutableDictionary* mutExtdict = [NSMutableDictionary dictionaryWithDictionary:extdict];
+                [mutExtdict setObject:@(AppStorePayStatusConsumeSuccess) forKey:@"status"];
+                [mutExtdict removeObjectForKey:@"receipt"];
+                consumeback(mutExtdict);
             }
-            else{
-                NSLog(@"consume self.allProducts is nil 拉取商品列表失败 重新拉取");
-                [self.consumefunForProductid setObject:^(SKProduct* p){consumeFun(p);} forKey:productid];
-                NSArray* products = [self.userDefaults objectForKey:@"productIdArray"];
-                if(products){
-                    NSSet *productsets = [NSSet setWithArray:products];
-                    SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers: productsets];
-                    request.delegate = self;
-                    [request start];
-                }else{
-                    NSLog(@"productIdArray is nil");
-                }
-            }
+            [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
         }
         else{
-            NSLog(@"不存在没有消费的交易");
+            NSLog(@"不存在没有消费的交易或消费有异常的交易");
+            if (consumeback) {
+                consumeback(@{@"status":@(AppStorePayStatusConsumeFail),@"productid":productid});
+            }
         }
     }
     @catch(NSException* exception){
@@ -196,22 +175,36 @@
 }
 
 -(void) checkNoConsumeWithCallBack:(AppStorePayEventCallBack)noConsumeBack{
-    if (nil == noConsumeBack) {
-        NSLog(@"检测是否有支付了但是没有消费的订单 noConsumeBack 不能为空");
-        return;
-    }
-    NSMutableDictionary* dict = self.productidExtSaveDict.count > 0 ? [NSMutableDictionary dictionary] : nil;
-    if (dict) {
-        NSMutableArray* noConsume = [NSMutableArray array];
-        for (NSString* productid in self.productidExtSaveDict) {
-            NSObject* obj = [self.productidExtSaveDict objectForKey:productid];
-            [noConsume addObject:obj];
+    @try{
+        if (nil == noConsumeBack) {
+            NSLog(@"检测是否有支付了但是没有消费的订单 noConsumeBack 不能为空");
+            return;
         }
-        [dict setObject:noConsume forKey:@"noConsume"];
-        noConsumeBack(dict);
+        NSArray* productIds = [self.userDefaults objectForKey:@"productIdArray"];
+        if (productIds) {
+            NSMutableArray* noConsumes = [NSMutableArray array];
+            for (NSString* productId in productIds) {
+                NSDictionary* extReceiptDict = [self.userDefaults objectForKey:productId];
+                if (extReceiptDict && [extReceiptDict objectForKey:@"receipt"]) {
+                    [noConsumes addObject:extReceiptDict];
+                }
+            }
+            if (noConsumes.count > 0) {
+                NSMutableDictionary* consumedict = [NSMutableDictionary dictionary];
+                [consumedict setObject:noConsumes forKey:@"noConsumes"];
+                [consumedict setObject:@(AppStorePayStatusExistNoConsumes) forKey:@"status"];
+                noConsumeBack(consumedict);
+            }
+            else{
+                noConsumeBack(nil);
+            }
+        }
+        else{
+            NSLog(@"没有任何初始化商品列表");
+        }
     }
-    else{
-        noConsumeBack(nil);
+    @catch(NSException* exception){
+        NSLog(@"checkNoConsumeWithCallBack exception = %@",exception);
     }
 }
 
@@ -226,13 +219,11 @@
             NSLog(@"price = %@",price);
             NSLog(@"currency = %@",currency);
             NSLog(@"productIdentifier = %@",productIdentifier);
-            if (![self.allProducts objectForKey:productIdentifier]) {
-                [self.allProducts setObject:pro forKey:productIdentifier];
-                NSMutableArray* saveProductids = [self.userDefaults objectForKey:@"productIdArray"];
-                if (nil == saveProductids) {
-                    saveProductids = [NSMutableArray array];
-                }
-                if (![saveProductids containsObject:productIdentifier]) {
+            if (nil == [self.dictWithSKProductForProductId objectForKey:productIdentifier]) {
+                [self.dictWithSKProductForProductId setObject:pro forKey:productIdentifier];
+                NSArray* saveProductids = [self.userDefaults objectForKey:@"productIdArray"];
+                saveProductids = (nil == saveProductids ? [NSArray array] : saveProductids);
+                if (false == [saveProductids containsObject:productIdentifier]) {
                     NSMutableArray* tmpMutableArray = [NSMutableArray arrayWithArray:saveProductids];
                     [tmpMutableArray addObject:productIdentifier];
                     [self.userDefaults setObject:tmpMutableArray forKey:@"productIdArray"];
@@ -242,11 +233,6 @@
             if (tmppayfunForProductid) {
                 tmppayfunForProductid(pro);
                 [self.payfunForProductid removeObjectForKey:productIdentifier];
-            }
-            void(^tmpconsumefun)(SKProduct*) = [self.consumefunForProductid objectForKey:productIdentifier];
-            if (tmpconsumefun) {
-                tmpconsumefun(pro);
-                [self.consumefunForProductid removeObjectForKey:productIdentifier];
             }
         }
         for (NSString* invalidProductid in response.invalidProductIdentifiers) {
@@ -274,8 +260,8 @@
             NSLog(@"dealSuccessTransaction saveExtDict == nil");
             return;
         }
+        [self.dictWithTransactionForProductId setObject:transaction forKey:payment.productIdentifier];
         NSMutableDictionary* extSaveDict = [NSMutableDictionary dictionaryWithDictionary:saveExtDict];
-        NSLog(@"payinfo = %@",extSaveDict);
         //从沙盒中获取交易凭证并且拼接成请求体数据
         NSURL *receiptUrl=[[NSBundle mainBundle] appStoreReceiptURL];
         if (nil == receiptUrl) {
@@ -293,9 +279,8 @@
             NSLog(@"dealSuccessTransaction nil == receiptString");
             return;
         }
-        [self.productidtransaction setObject:transaction forKey:payment.productIdentifier];
         [extSaveDict setObject:receiptString forKey:@"receipt"];
-        [self.productidExtSaveDict setObject:extSaveDict forKey:payment.productIdentifier];
+        [self.userDefaults setObject:extSaveDict forKey:payment.productIdentifier];
         AppStorePayEventCallBack callBack = [self.paycallbackForProductid objectForKey:payment.productIdentifier];
         if (callBack) {
             [extSaveDict setObject:@(AppStorePayStatusPaySuccess) forKey:@"status"];

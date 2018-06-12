@@ -93,19 +93,20 @@
     NSString* productid = [NSString stringWithFormat:@"ggggg%d",sender.tag];
     [[AppStoreKit getInstance] consume:productid withCallBack:^(NSDictionary *consumeback) {
         NSNumber* sonsumestatus = [consumeback objectForKey:@"status"];
-        if (sonsumestatus.intValue == AppStorePayStatusConsume) {
+        if (sonsumestatus.intValue == AppStorePayStatusConsumeSuccess) {
             NSLog(@"ViewController 消费成功：%@",consumeback);
         }
-        else if(sonsumestatus.intValue == AppStorePayStatusInvalidProductId){
-            NSLog(@"ViewController 无效的商品id: %@",consumeback);
+        else if(sonsumestatus.intValue == AppStorePayStatusConsumeFail){
+            NSLog(@"ViewController 消费失败: %@",consumeback);
         }
     }];
 }
 - (IBAction)checkNoConsumeOrder:(UIButton *)sender {
     [[AppStoreKit getInstance] checkNoConsumeWithCallBack:^(NSDictionary *back) {
-        if (back) {
-            NSArray* noConsumes = [back objectForKey:@"noConsume"];
-            NSLog(@"ViewController noConsume count = %d",noConsumes.count);
+        NSNumber* checkstatus = [back objectForKey:@"status"];
+        if (checkstatus.intValue == AppStorePayStatusExistNoConsumes) {
+            NSArray* noConsumes = [back objectForKey:@"noConsumes"];
+            NSLog(@"ViewController noConsumes count = %d",noConsumes.count);
             NSLog(@"ViewController 未消费订单如下：");
             for (NSDictionary* backdict in noConsumes) {
                 NSLog(@"%@",backdict);
@@ -129,8 +130,11 @@
     else if (1 == sender.tag) {
         [[AppStoreKit getInstance] consume:@"144551gefsd" withCallBack:^(NSDictionary *consumeback) {
             NSNumber* sonsumestatus = [consumeback objectForKey:@"status"];
-            if (sonsumestatus.intValue == AppStorePayStatusConsume) {
+            if (sonsumestatus.intValue == AppStorePayStatusConsumeSuccess) {
                 NSLog(@"ViewController 消费成功：%@",consumeback);
+            }
+            else if(sonsumestatus.intValue == AppStorePayStatusConsumeFail){
+                NSLog(@"ViewController 消费失败: %@",consumeback);
             }
         }];
     }

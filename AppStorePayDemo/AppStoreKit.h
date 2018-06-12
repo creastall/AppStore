@@ -1,5 +1,5 @@
 //
-//  AppStoreUtils.h
+//  AppStoreKit.h
 //  appstoredemo
 //
 //  Created by creastall on 2018/6/11.
@@ -16,7 +16,9 @@ typedef enum : NSInteger {
     AppStorePayStatusPaySuccess,//支付成功
     AppStorePayStatusPayFail,//支付失败
     AppStorePayStatusInvalidProductId,//无效的商品id
-    AppStorePayStatusConsume//消费
+    AppStorePayStatusConsumeSuccess,//消费成功
+    AppStorePayStatusConsumeFail,//消费失败
+    AppStorePayStatusExistNoConsumes//存在没有消费的订单
 } AppStorePayStatus;
 
 typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
@@ -63,7 +65,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
  检测：支付成功，但是还没有调用consume来消费的订单
 
  @param noConsumeBack 支付回调函数，返回一个字典，有如下key：
-        1.key = noConsume(value -> NSArray*)：记录所有没有消费的账单，数组中每个值为一个字典，该字典和pay函数返回的字典一样，如下
+        1.key = noConsumes(value -> NSArray*)：记录所有没有消费的账单，数组中每个值为一个字典，该字典和pay函数返回的字典一样，如下
                  1.key = extdata(value -> NSObject*)：回调函数透传对象
                  2.key = price(value -> NSDecimalNumber*)：商品价格，已经转化为支付国家的货币
                  3.key = currency(value -> NSString*)：支付国家的货币符号
