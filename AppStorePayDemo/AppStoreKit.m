@@ -97,7 +97,17 @@
                 else{
                     NSNumber* status = [oldsaveExtDict objectForKey:@"status"];
                     if (status && status.intValue == AppStorePayStatusRestartAppToRestorePaied) {
-                        payback(oldsaveExtDict);
+//                        payback(oldsaveExtDict);
+//                        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"您已购买此 App 内购买项目。"
+//                                                                                       message:@"重启 App，此项目将免费恢复。"
+//                                                                                preferredStyle:UIAlertControllerStyleAlert];
+//                        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault
+//                                                                              handler:^(UIAlertAction * action) {
+//                                                                                  //响应事件
+//                                                                                  NSLog(@"action = %@", action);
+//                                                                              }];
+//                        [alert addAction:defaultAction];
+//                        [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
                     }
                     else{
                         NSMutableDictionary* tmp = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
