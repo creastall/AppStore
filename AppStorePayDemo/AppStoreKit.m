@@ -40,6 +40,30 @@
     return self;
 }
 
+- (void) showTitle:(NSString*)title message:(NSString*)message{
+#if defined(DEBUG)||defined(_DEBUG)
+    static bool showed = false;
+    if (!showed) {
+        showed = true;
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            [NSThread sleepForTimeInterval:0.2];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSLog(@"show view");
+                UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                                                               message:message
+                                                                        preferredStyle:UIAlertControllerStyleAlert];
+                UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"知道了" style:UIAlertActionStyleDefault
+                                                                      handler:^(UIAlertAction * action) {
+                                                                          showed = false;
+                                                                      }];
+                [alert addAction:defaultAction];
+                [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+            });
+        });
+    }
+#endif
+}
+
 -(void) initAppStoreWithSuiteName:(NSString*)suiteName clear:(bool)clear{
 #if defined(DEBUG)||defined(_DEBUG)
     [[NSUserDefaults standardUserDefaults] setBool:clear forKey:@"AppStoreClearCache"];
@@ -48,6 +72,7 @@
     @try{
         if (nil == suiteName || 0 == suiteName.length) {
             NSLog(@"suiteName 不能为空或空字符");
+            [self showTitle:@"空或空字符" message:@"initAppStoreWithSuiteName 函数，suiteName 不能为空或空字符"];
             return;
         }
         self.userDefaults = [[NSUserDefaults alloc] initWithSuiteName:suiteName];
@@ -71,7 +96,11 @@
         }
     }
     @catch(NSException *exception){
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
         NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 }
 
@@ -79,10 +108,12 @@
     @try{
         if (nil == payback) {
             NSLog(@"支付回调函数不能为空");
+            [self showTitle:@"空" message:@"pay 函数，支付回调函数不能为空"];
             return;
         }
         if (nil == productid || 0 == productid.length) {
             NSLog(@"productid 不能为空或空字符");
+             [self showTitle:@"空或空字符" message:@"pay 函数，productid 不能为空或空字符"];
             return;
         }
         if(![SKPaymentQueue canMakePayments]){
@@ -101,16 +132,6 @@
                     NSNumber* status = [oldsaveExtDict objectForKey:@"status"];
                     if (status && status.intValue == AppStorePayStatusRestartAppToRestorePaied) {
                         payback(oldsaveExtDict);
-//                        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"您已购买此 App 内购买项目。"
-//                                                                                       message:@"重启 App，此项目将免费恢复。"
-//                                                                                preferredStyle:UIAlertControllerStyleAlert];
-//                        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleDefault
-//                                                                              handler:^(UIAlertAction * action) {
-//                                                                                  //响应事件
-//                                                                                  NSLog(@"action = %@", action);
-//                                                                              }];
-//                        [alert addAction:defaultAction];
-//                        [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
                     }
                     else{
                         NSMutableDictionary* tmp = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
@@ -160,7 +181,11 @@
         }
     }
     @catch(NSException* exception){
-        NSLog(@"pay exception = %@",exception);
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
+        NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 }
 
@@ -168,6 +193,7 @@
     @try{
         if (nil == productid || 0 == productid.length) {
             NSLog(@"productid 不能为空或空字符");
+            [self showTitle:@"空或空字符" message:@"consume 函数，productid 不能为空或空字符"];
             return;
         }
         SKPaymentTransaction* transaction = [self.dictWithTransactionForProductId objectForKey:productid];
@@ -191,7 +217,11 @@
         }
     }
     @catch(NSException* exception){
-        NSLog(@"consume exception = %@",exception);
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
+        NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 }
 
@@ -199,6 +229,7 @@
     @try{
         if (nil == noConsumeBack) {
             NSLog(@"检测是否有支付了但是没有消费的订单 noConsumeBack 不能为空");
+            [self showTitle:@"空" message:@"checkNoConsumeWithCallBack 函数，noConsumeBack 不能为空"];
             return;
         }
         NSArray* productIds = [self.userDefaults objectForKey:@"productIdArray"];
@@ -225,7 +256,11 @@
         }
     }
     @catch(NSException* exception){
-        NSLog(@"checkNoConsumeWithCallBack exception = %@",exception);
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
+        NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 }
 
@@ -265,7 +300,11 @@
         }
     }
     @catch(NSException *exception){
-        NSLog(@"productsRequest exception = %@",exception);
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
+        NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 }
 
@@ -275,6 +314,7 @@
         NSDictionary* saveExtDict = [self.userDefaults objectForKey:payment.productIdentifier];
         if (nil == saveExtDict) {
             NSLog(@"dealSuccessTransaction saveExtDict == nil");
+            [self showTitle:@"空" message:@"dealSuccessTransaction 函数，有不可用的支付缓存，请初始化的时候清除支付缓存"];
             return;
         }
         [self.dictWithTransactionForProductId setObject:transaction forKey:payment.productIdentifier];
@@ -313,7 +353,11 @@
         }
     }
     @catch(NSException* exception){
-        NSLog(@"dealSuccessTransaction exception = %@",exception);
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
+        NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 }
 
@@ -340,7 +384,11 @@
         [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
     }
     @catch(NSException* exception){
-        NSLog(@"dealFailTransaction exception = %@",exception);
+        NSArray* stacks = [exception callStackSymbols];
+        NSString* stack = [stacks componentsJoinedByString:@"\n"];
+        NSLog(@"exception = %@",exception);
+        NSLog(@"stack = %@",stack);
+        [self showTitle:exception.reason message:stack];
     }
 
 }
