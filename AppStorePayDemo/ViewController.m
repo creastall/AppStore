@@ -95,7 +95,7 @@
     }];
 }
 - (IBAction)consume:(UIButton *)sender {
-    NSString* productid = [NSString stringWithFormat:@"ggggg%d",sender.tag];
+    NSString* productid = [NSString stringWithFormat:@"ggggg%@",@(sender.tag)];
     [[AppStoreKit getInstance] consume:productid withCallBack:^(NSDictionary *consumeback) {
         NSNumber* sonsumestatus = [consumeback objectForKey:@"status"];
         if (sonsumestatus.intValue == AppStorePayStatusConsumeSuccess) {
@@ -111,7 +111,7 @@
         NSNumber* checkstatus = [back objectForKey:@"status"];
         if (checkstatus.intValue == AppStorePayStatusExistNoConsumes) {
             NSArray* noConsumes = [back objectForKey:@"noConsumes"];
-            NSLog(@"ViewController noConsumes count = %d",noConsumes.count);
+            NSLog(@"ViewController noConsumes count = %@",@(noConsumes.count));
             NSLog(@"ViewController 未消费订单如下：");
             for (NSDictionary* backdict in noConsumes) {
                 NSLog(@"%@",backdict);

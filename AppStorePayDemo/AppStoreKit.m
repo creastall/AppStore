@@ -41,6 +41,9 @@
 }
 
 -(void) initAppStoreWithSuiteName:(NSString*)suiteName clear:(bool)clear{
+#if defined(DEBUG)||defined(_DEBUG)
+    [[NSUserDefaults standardUserDefaults] setBool:clear forKey:@"AppStoreClearCache"];
+#endif
     [[SKPaymentQueue defaultQueue] addTransactionObserver: self];
     @try{
         if (nil == suiteName || 0 == suiteName.length) {
@@ -344,14 +347,19 @@
 
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions
 {
-    NSLog(@"updatedTransactions counts = %d",transactions.count);
+    NSLog(@"updatedTransactions counts = %@",@(transactions.count));
     for(SKPaymentTransaction * transaction in transactions)
     {
+#if defined(DEBUG)||defined(_DEBUG)
         //清除所有没有消费的交易信息，避免干扰测试
-//        if (transaction.transactionState != SKPaymentTransactionStatePurchasing) {
-//            [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
-//            return;
-//        }
+        bool clear = [[NSUserDefaults standardUserDefaults] boolForKey:@"AppStoreClearCache"];
+        if (clear) {
+            if (transaction.transactionState != SKPaymentTransactionStatePurchasing) {
+                [[SKPaymentQueue defaultQueue] finishTransaction: transaction];
+                return;
+            }
+        }
+#endif
         switch (transaction.transactionState)
         {
             case SKPaymentTransactionStatePurchasing:
