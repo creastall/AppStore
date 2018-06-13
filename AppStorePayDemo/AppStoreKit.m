@@ -16,6 +16,8 @@
 @property (strong,nonatomic) NSMutableDictionary* paycallbackForProductid;
 @property (strong,nonatomic) NSMutableDictionary* dictWithTransactionForProductId;//保存没有消费的订单和交易的集合
 @property (strong,nonatomic) NSUserDefaults* userDefaults;
+@property (strong,nonatomic) SKProductsRequest *productRequest;
+
 
 @end
 
@@ -36,6 +38,7 @@
         self.payfunForProductid = [NSMutableDictionary dictionary];
         self.paycallbackForProductid = [NSMutableDictionary dictionary];
         self.dictWithTransactionForProductId = [NSMutableDictionary dictionary];
+        self.productRequest = nil;
     }
     return self;
 }
@@ -88,9 +91,10 @@
 #endif
         if(products){
             NSSet *productsets = [NSSet setWithArray:products];
-            SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers: productsets];
-            request.delegate = self;
-            [request start];
+            self.productRequest = nil;
+            self.productRequest = [[SKProductsRequest alloc] initWithProductIdentifiers: productsets];
+            self.productRequest.delegate = self;
+            [self.productRequest start];
         }else{
             NSLog(@"productIdArray is nil");
         }
@@ -175,9 +179,10 @@
                     payback(@{@"status":@(AppStorePayStatusInvalidProductId),@"productId":productid});
                 }
             } forKey:productid];
-            SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithArray:@[productid]]];
-            request.delegate = self;
-            [request start];
+            self.productRequest = nil;
+            self.productRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithArray:@[productid]]];
+            self.productRequest.delegate = self;
+            [self.productRequest start];
         }
     }
     @catch(NSException* exception){
@@ -341,6 +346,8 @@
             return;
         }
         [extSaveDict setObject:receiptString forKey:@"receipt"];
+        //test code
+//        [self verifyReceipt:receiptString];
         [self.userDefaults setObject:extSaveDict forKey:payment.productIdentifier];
         AppStorePayEventCallBack callBack = [self.paycallbackForProductid objectForKey:payment.productIdentifier];
         if (callBack) {
