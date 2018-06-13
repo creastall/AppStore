@@ -97,7 +97,7 @@
                 else{
                     NSNumber* status = [oldsaveExtDict objectForKey:@"status"];
                     if (status && status.intValue == AppStorePayStatusRestartAppToRestorePaied) {
-//                        payback(oldsaveExtDict);
+                        payback(oldsaveExtDict);
 //                        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"您已购买此 App 内购买项目。"
 //                                                                                       message:@"重启 App，此项目将免费恢复。"
 //                                                                                preferredStyle:UIAlertControllerStyleAlert];
