@@ -48,7 +48,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
 
  @param productid 商品id
  @param extdata 透传对象，可以为字典、数组或者json字符串
- @param payback 支付回调函数，返回一个字典，有如下key：
+ @param payback 回调函数，返回一个字典，有如下key：
          1.key = extdata(value -> NSObject*)：回调函数透传对象
          2.key = price(value -> NSDecimalNumber*)：商品价格，已经转化为支付国家的货币
          3.key = currency(value -> NSString*)：支付国家的货币符号
@@ -60,7 +60,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
  当该笔订单游戏服务器已经发货，玩家已经收到对应的物品的时候调用
 
  @param productid 商品id
- @param consumeback 支付回调函数，返回一个字典，有如下key：
+ @param consumeback 回调函数，返回一个字典，有如下key：
          1.key = price(value -> NSDecimalNumber*)：商品价格，已经转化为支付国家的货币
          2.key = currency(value -> NSString*)：支付国家的货币符号
          3.key = productid(value -> NSString*)：商品id
@@ -71,7 +71,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
 /**
  检测：支付成功，但是还没有调用consume来消费的订单
 
- @param noConsumeBack 支付回调函数，返回一个字典，有如下key：
+ @param noConsumeBack 回调函数，返回一个字典，有如下key：
         1.key = noConsumes(value -> NSArray*)：记录所有没有消费的账单，数组中每个值为一个字典，该字典和pay函数返回的字典一样，如下
                  1.key = extdata(value -> NSObject*)：回调函数透传对象
                  2.key = price(value -> NSDecimalNumber*)：商品价格，已经转化为支付国家的货币
