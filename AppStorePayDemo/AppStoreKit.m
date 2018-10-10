@@ -346,6 +346,7 @@
             return;
         }
         [extSaveDict setObject:receiptString forKey:@"receipt"];
+        [extSaveDict setObject:transaction.transactionIdentifier forKey:@"transactionid"];
         //test code
 //        [self verifyReceipt:receiptString];
         [self.userDefaults setObject:extSaveDict forKey:payment.productIdentifier];

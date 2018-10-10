@@ -54,6 +54,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
          3.key = currency(value -> NSString*)：支付国家的货币符号
          4.key = productid(value -> NSString*)：商品id
          5.key = receipt(value -> NSString*)：支付凭据
+         6.key = transactionid(value -> NSString*)：苹果的交易标识id
  */
 -(void) pay:(NSString*)productid withExtdata:(NSObject*)extdata withCallBack:(AppStorePayEventCallBack)payback;
 /**
@@ -65,6 +66,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
          2.key = currency(value -> NSString*)：支付国家的货币符号
          3.key = productid(value -> NSString*)：商品id
          4.key = extdata(value -> NSObject*)：回调函数透传对象
+         5.key = transactionid(value -> NSString*)：苹果的交易标识id
  */
 -(void) consume:(NSString*)productid withCallBack:(AppStorePayEventCallBack)consumeback;
 
@@ -78,6 +80,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
                  3.key = currency(value -> NSString*)：支付国家的货币符号
                  4.key = productid(value -> NSString*)：商品id
                  5.key = receipt(value -> NSString*)：支付凭据
+                 6.key = transactionid(value -> NSString*)：苹果的交易标识id
  */
 -(void) checkNoConsumeWithCallBack:(AppStorePayEventCallBack)noConsumeBack;
 
