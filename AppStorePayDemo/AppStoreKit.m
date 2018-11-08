@@ -103,7 +103,7 @@
     }
 }
 
--(void) pay:(NSString*)productid withExtdata:(NSObject*)extdata withCallBack:(AppStorePayEventCallBack)payback{
+-(void) pay:(NSString*)productid withExt:(NSString*)extString withCallBack:(AppStorePayEventCallBack)payback{
     @try{
         if (nil == payback) {
             NSLog(@"支付回调函数不能为空");
@@ -125,16 +125,23 @@
                 if ([oldsaveExtDict objectForKey:@"receipt"]) {
                     NSMutableDictionary* mutOldsaveExtDict = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
                     [mutOldsaveExtDict setObject:@(AppStorePayStatusSameProductIdPaied) forKey:@"status"];
+                    NSString* extdata = [mutOldsaveExtDict objectForKey:@"extdata"];
+                    [mutOldsaveExtDict setObject:[self base64Decode:extdata] forKey:@"extdata"];
                     payback(mutOldsaveExtDict);
                 }
                 else{
                     NSNumber* status = [oldsaveExtDict objectForKey:@"status"];
                     if (status && status.intValue == AppStorePayStatusRestartAppToRestorePaied) {
-                        payback(oldsaveExtDict);
+                        NSMutableDictionary* mutOldsaveExtDict = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
+                        NSString* extdata = [mutOldsaveExtDict objectForKey:@"extdata"];
+                        [mutOldsaveExtDict setObject:[self base64Decode:extdata] forKey:@"extdata"];
+                        payback(mutOldsaveExtDict);
                     }
                     else{
                         NSMutableDictionary* tmp = [NSMutableDictionary dictionaryWithDictionary:oldsaveExtDict];
                         [tmp setObject:@(AppStorePayStatusSameProductIdPaying) forKey:@"status"];
+                        NSString* extdata = [tmp objectForKey:@"extdata"];
+                        [tmp setObject:[self base64Decode:extdata] forKey:@"extdata"];
                         payback(tmp);
                     }
                 }
@@ -144,14 +151,19 @@
                 SKMutablePayment *payment = [SKMutablePayment paymentWithProduct:product];
                 NSString* currency = [product.priceLocale objectForKey:NSLocaleCurrencyCode];
                 NSMutableDictionary* saveExtDict = [NSMutableDictionary dictionary];
-                if (extdata) {
-                    [saveExtDict setObject:extdata forKey:@"extdata"];
+                NSString* base64extString = [self base64Encode:extString];
+                if (base64extString) {
+                    [saveExtDict setObject:base64extString forKey:@"extdata"];
                 }
                 [saveExtDict setObject:product.price forKey:@"price"];
                 [saveExtDict setObject:currency forKey:@"currency"];
                 [saveExtDict setObject:payment.productIdentifier forKey:@"productid"];
                 [self.userDefaults setObject:saveExtDict forKey:productid];
+                NSString* applicationUsername = [NSString stringWithFormat:@"{\"extdata\":\"%@\",\"price\":%@,\"currency\":\"%@\",\"productid\":\"%@\"}",base64extString,product.price,currency,payment.productIdentifier];
+                payment.applicationUsername = applicationUsername;
                 [saveExtDict setObject:@(AppStorePayStatusReadyPay) forKey:@"status"];
+                NSString* extdata = [saveExtDict objectForKey:@"extdata"];
+                [saveExtDict setObject:[self base64Decode:extdata] forKey:@"extdata"];
                 payback(saveExtDict);
                 //保存支付回调函数,不需要判断是否存在，存在即覆盖原来的回调函数
                 [self.paycallbackForProductid setObject:payback forKey:product.productIdentifier];
@@ -204,6 +216,8 @@
             if (consumeback) {
                 NSMutableDictionary* mutExtdict = [NSMutableDictionary dictionaryWithDictionary:extdict];
                 [mutExtdict setObject:@(AppStorePayStatusConsumeSuccess) forKey:@"status"];
+                NSString* extdata = [mutExtdict objectForKey:@"extdata"];
+                [mutExtdict setObject:[self base64Decode:extdata] forKey:@"extdata"];
                 [mutExtdict removeObjectForKey:@"receipt"];
                 consumeback(mutExtdict);
             }
@@ -237,8 +251,11 @@
             NSMutableArray* noConsumes = [NSMutableArray array];
             for (NSString* productId in productIds) {
                 NSDictionary* extReceiptDict = [self.userDefaults objectForKey:productId];
-                if (extReceiptDict && [extReceiptDict objectForKey:@"receipt"]) {
-                    [noConsumes addObject:extReceiptDict];
+                NSMutableDictionary* extReceiptMutDict = [NSMutableDictionary dictionaryWithDictionary:extReceiptDict];
+                if (extReceiptMutDict && [extReceiptMutDict objectForKey:@"receipt"]) {
+                    NSString* extdata = [extReceiptMutDict objectForKey:@"extdata"];
+                    [extReceiptMutDict setObject:[self base64Decode:extdata] forKey:@"extdata"];
+                    [noConsumes addObject:extReceiptMutDict];
                 }
             }
             if (noConsumes.count > 0) {
@@ -311,14 +328,24 @@
 -(void) dealSuccessTransaction:(SKPaymentTransaction*)transaction {
     @try{
         SKPayment* payment = transaction.payment;
-        NSDictionary* saveExtDict = [self.userDefaults objectForKey:payment.productIdentifier];
-        if (nil == saveExtDict) {
-            NSLog(@"dealSuccessTransaction saveExtDict == nil");
-            [self showTitle:@"空" message:@"dealSuccessTransaction 函数，有不可用的支付缓存，请初始化的时候清除支付缓存"];
-            return;
+        NSString* applicationUsername = payment.applicationUsername;
+        NSMutableDictionary* extSaveDict = nil;
+        if (applicationUsername) {
+            NSLog(@"applicationUsername = %@",applicationUsername);
+            extSaveDict = [self toMutDictWithString:applicationUsername];
         }
+        else{
+            NSDictionary* saveExtDict = [self.userDefaults objectForKey:payment.productIdentifier];
+            if (nil == saveExtDict) {
+                NSLog(@"dealSuccessTransaction saveExtDict == nil");
+                [self showTitle:@"空" message:@"dealSuccessTransaction 函数，有不可用的支付缓存，请初始化的时候清除支付缓存"];
+                return;
+            }
+            extSaveDict = [NSMutableDictionary dictionaryWithDictionary:saveExtDict];
+        }
+    
         [self.dictWithTransactionForProductId setObject:transaction forKey:payment.productIdentifier];
-        NSMutableDictionary* extSaveDict = [NSMutableDictionary dictionaryWithDictionary:saveExtDict];
+        
         //从沙盒中获取交易凭证并且拼接成请求体数据
         NSURL *receiptUrl=[[NSBundle mainBundle] appStoreReceiptURL];
         if (nil == receiptUrl) {
@@ -347,12 +374,23 @@
         [self.userDefaults setObject:extSaveDict forKey:payment.productIdentifier];
         AppStorePayEventCallBack callBack = [self.paycallbackForProductid objectForKey:payment.productIdentifier];
         if (callBack) {
+            
             [extSaveDict setObject:@(AppStorePayStatusPaySuccess) forKey:@"status"];
+            NSString* extdata = [extSaveDict objectForKey:@"extdata"];
+            [extSaveDict setObject:[self base64Decode:extdata] forKey:@"extdata"];
             callBack(extSaveDict);
             [self.paycallbackForProductid removeObjectForKey:payment.productIdentifier];
         }
         else{
+            //支付成功但是没有消费，接着又卸载游戏，然后安装游戏，第二次启动游戏会来到这里
             NSLog(@"dealSuccessTransaction 支付成功，回调函数为空 productid = %@",payment.productIdentifier);
+            NSArray* saveProductids = [self.userDefaults objectForKey:@"productIdArray"];
+            saveProductids = (nil == saveProductids ? [NSArray array] : saveProductids);
+            if (false == [saveProductids containsObject:payment.productIdentifier]) {
+                NSMutableArray* tmpMutableArray = [NSMutableArray arrayWithArray:saveProductids];
+                [tmpMutableArray addObject:payment.productIdentifier];
+                [self.userDefaults setObject:tmpMutableArray forKey:@"productIdArray"];
+            }
         }
     }
     @catch(NSException* exception){
@@ -374,6 +412,8 @@
             [extSaveDict setObject:@(AppStorePayStatusPayFail) forKey:@"status"];
             AppStorePayEventCallBack callBack = [self.paycallbackForProductid objectForKey:payment.productIdentifier];
             if (callBack) {
+                NSString* extdata = [extSaveDict objectForKey:@"extdata"];
+                [extSaveDict setObject:[self base64Decode:extdata] forKey:@"extdata"];
                 callBack(extSaveDict);
                 [self.paycallbackForProductid removeObjectForKey:payment.productIdentifier];
             }
@@ -490,6 +530,47 @@
 
     }];
     [task resume];
+}
+
+
+//其他工具function
+-(NSMutableDictionary*) toMutDictWithString:(NSString*)string {
+    NSData *jsonData = [string dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *err = nil;
+    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&err];
+    if(err) {
+        return nil;
+    }
+    NSMutableDictionary* ret = [[NSMutableDictionary alloc] initWithDictionary:dic];
+    return ret;
+}
+
+- (NSString*) toStringWithDict:(NSDictionary*)dict{
+    NSError *parseError = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:&parseError];
+    if (!parseError) {
+        return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    }else{
+        return nil;
+    }
+}
+
+-(NSString*)base64Encode:(NSString*)string{
+    if (!string) {
+        return nil;
+    }
+    NSData* data = [string dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *resultStr = [data base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
+    return resultStr;
+}
+
+-(NSString*)base64Decode:(NSString*)string{
+    if (!string) {
+        return nil;
+    }
+    NSData *resultData = [[NSData alloc] initWithBase64EncodedString:string options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    NSString* retstring = [[NSString alloc] initWithData:resultData encoding:NSUTF8StringEncoding];
+    return retstring;
 }
 
 

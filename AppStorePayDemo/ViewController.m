@@ -28,11 +28,7 @@
 
 - (IBAction)payClick:(UIButton *)sender {
     NSString* productid = sender.titleLabel.text;
-    NSMutableDictionary* extdict = [NSMutableDictionary dictionary];
-    [extdict setObject:@(123456) forKey:@"price"];
-    [extdict setObject:@"123456ddsdf" forKey:@"orderid"];
-    NSArray* extarray = @[@"1",@"2",@"3"];
-    [[AppStoreKit getInstance] pay:productid withExtdata:extarray withCallBack:^(NSDictionary *payback) {
+    [[AppStoreKit getInstance] pay:productid withExt:@"{\"price\":128,\"orderid\":\"4514514125\"}" withCallBack:^(NSDictionary *payback) {
         NSNumber* status = [payback objectForKey:@"status"];
         AppStorePayStatus appstorestatus = (AppStorePayStatus)status.intValue;
         switch(appstorestatus){
@@ -124,7 +120,7 @@
 }
 - (IBAction)invalidProductId:(UIButton *)sender {
     if (0 == sender.tag) {
-        [[AppStoreKit getInstance] pay:@"jjfhiekjgsde" withExtdata:nil withCallBack:^(NSDictionary *payback) {
+        [[AppStoreKit getInstance] pay:@"jjfhiekjgsde" withExt:nil withCallBack:^(NSDictionary *payback) {
             NSNumber* status = [payback objectForKey:@"status"];
             if (status.intValue == AppStorePayStatusInvalidProductId) {
                 NSLog(@"ViewController 购买无效的商品id。。。。");

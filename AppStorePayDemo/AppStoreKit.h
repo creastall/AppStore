@@ -46,16 +46,16 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
  支付函数
 
  @param productid 商品id
- @param extdata 透传对象，可以为字典、数组或者json字符串
+ @param extString 透传对象，可以为字典、数组或者json字符串
  @param payback 回调函数，返回一个字典，有如下key：
-         1.key = extdata(value -> NSObject*)：回调函数透传对象
+         1.key = extdata(value -> NSString*)：回调函数透传字符串
          2.key = price(value -> NSDecimalNumber*)：商品价格，已经转化为支付国家的货币
          3.key = currency(value -> NSString*)：支付国家的货币符号
          4.key = productid(value -> NSString*)：商品id
          5.key = receipt(value -> NSString*)：支付凭据
          6.key = transactionid(value -> NSString*)：苹果的交易标识id
  */
--(void) pay:(NSString*)productid withExtdata:(NSObject*)extdata withCallBack:(AppStorePayEventCallBack)payback;
+-(void) pay:(NSString*)productid withExt:(NSString*)extString withCallBack:(AppStorePayEventCallBack)payback;
 /**
  当该笔订单游戏服务器已经发货，玩家已经收到对应的物品的时候调用
 
