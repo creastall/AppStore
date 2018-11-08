@@ -67,18 +67,13 @@
 #endif
 }
 
--(void) initAppStoreWithSuiteName:(NSString*)suiteName clear:(bool)clear{
+-(void) initAppStoreWithClear:(bool)clear{
 #if defined(DEBUG)||defined(_DEBUG)
     [[NSUserDefaults standardUserDefaults] setBool:clear forKey:@"AppStoreClearCache"];
 #endif
     [[SKPaymentQueue defaultQueue] addTransactionObserver: self];
     @try{
-        if (nil == suiteName || 0 == suiteName.length) {
-            NSLog(@"suiteName 不能为空或空字符");
-            [self showTitle:@"空或空字符" message:@"initAppStoreWithSuiteName 函数，suiteName 不能为空或空字符"];
-            return;
-        }
-        self.userDefaults = [[NSUserDefaults alloc] initWithSuiteName:suiteName];
+        self.userDefaults = [NSUserDefaults standardUserDefaults];
         NSArray* products = [self.userDefaults objectForKey:@"productIdArray"];
 #if defined(DEBUG)||defined(_DEBUG)
         if (products && clear) {

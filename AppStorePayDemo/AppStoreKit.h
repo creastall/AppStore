@@ -41,7 +41,7 @@ typedef void(^AppStorePayEventCallBack)(NSDictionary* back);
  @param clear 是否清除缓存数据，包括所有商品列表和所有支付状态缓存,使用一次true运行后应该立即改为false，正式上线的时候必须为：false
  为了保证开发者使用错误，release版本的包变量clear强制为false
  */
--(void) initAppStoreWithSuiteName:(NSString*)suiteName clear:(bool)clear;
+-(void) initAppStoreWithClear:(bool)clear;
 
 /**
  支付函数
