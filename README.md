@@ -10,3 +10,8 @@
 
 3.前端根据服务器验证结果是否消费(consume:withCallBack:)该笔订单;
 
+注意：
+
+需要在didFinishLaunchingWithOptions:函数中调用
+[[AppStoreKit getInstance] initAppStoreWithClear:false]函数，具体参考demo
+
